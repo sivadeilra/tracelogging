@@ -271,12 +271,12 @@ impl fmt::Debug for Provider {
 ///
 /// - Must not move-out of a provider while it is registered. `define_provider` enforces
 ///   this by storing the result in an immutable variable.
-pub const unsafe fn provider_new(meta: &'static [u8], id: &Guid) -> Provider {
-    return Provider {
+pub const fn provider_new(meta: &'static [u8], id: &Guid) -> Provider {
+    Provider {
         context: ProviderContext::new(),
         meta,
         id: *id,
-    };
+    }
 }
 
 /// For use by the write_event macro: Calls EventWriteTransfer.

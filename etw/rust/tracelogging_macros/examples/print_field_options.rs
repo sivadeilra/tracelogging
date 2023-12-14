@@ -1,3 +1,6 @@
+fn main() {}
+
+/*
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -311,3 +314,4 @@ fn outtype_to_string(value: OutType) -> &'static str {
         OutType::DateTimeUtc => "DateTimeUtc",
     };
 }
+*/

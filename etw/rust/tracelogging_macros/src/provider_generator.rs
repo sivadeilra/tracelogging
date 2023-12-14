@@ -1,30 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-use proc_macro::*;
-
 use crate::provider_info::ProviderInfo;
-use crate::strings::*;
-use crate::tree::Tree;
+use proc_macro2::*;
+use quote::quote;
 
-pub struct ProviderGenerator {
-    prov_tree: Tree,
-    tree1: Tree,
-    tree2: Tree,
-    tree3: Tree,
-}
+pub struct ProviderGenerator {}
 
 impl ProviderGenerator {
-    pub fn new(span: Span) -> Self {
-        return Self {
-            prov_tree: Tree::new(span),
-            tree1: Tree::new(span),
-            tree2: Tree::new(span),
-            tree3: Tree::new(span),
-        };
-    }
-
-    pub fn generate(&mut self, provider: ProviderInfo) -> TokenStream {
+    pub fn generate(provider: ProviderInfo) -> TokenStream {
         // Reserve space for size.
         let mut meta = Vec::<u8>::new();
         meta.push(0);
@@ -45,53 +29,24 @@ impl ProviderGenerator {
         meta[0] = meta.len() as u8;
         meta[1] = (meta.len() >> 8) as u8;
 
+        let provider_symbol = &provider.symbol;
         let id_fields = provider.id.to_fields();
+        let id_fields_0: u32 = id_fields.0;
+        let id_fields_1: u16 = id_fields.1;
+        let id_fields_2: u16 = id_fields.2;
+        let id_fields_3: [u8; 8] = id_fields.3;
 
-        let prov_tokens = self
-            .prov_tree
-            // static PROVIDER: ::tracelogging::Provider = unsafe { ... };
-            .add_ident("static")
-            .add_token(provider.symbol.clone())
-            .add_punct(":")
-            .add_path(PROVIDER_PATH)
-            .add_punct("=")
-            .add_ident("unsafe")
-            .add_group_curly(
-                self.tree1
-                    .add_path_call(
-                        // ::tracelogging::_internal::provider_new(
-                        PROVIDER_NEW_PATH,
-                        self.tree2
-                            // b"EncodedProviderMetadata...",
-                            .add_literal(Literal::byte_string(&meta))
-                            .add_punct(",")
-                            // &::tracelogging::Guid::from_fields(d0, d1, d2, *b"d3...")
-                            .add_punct("&")
-                            .add_path_call(
-                                GUID_FROM_FIELDS_PATH,
-                                self.tree3
-                                    .add_literal(Literal::u32_unsuffixed(id_fields.0))
-                                    .add_punct(",")
-                                    .add_literal(Literal::u16_unsuffixed(id_fields.1))
-                                    .add_punct(",")
-                                    .add_literal(Literal::u16_unsuffixed(id_fields.2))
-                                    .add_punct(",")
-                                    .add_punct("*")
-                                    .add_literal(Literal::byte_string(&id_fields.3))
-                                    .drain(),
-                            )
-                            .drain(),
+        quote! {
+            static #provider_symbol: ::tracelogging::Provider =
+                ::tracelogging::_internal::provider_new(
+                    &[ #(#meta),* ],
+                    &tracelogging::Guid::from_fields(
+                        #id_fields_0,
+                        #id_fields_1,
+                        #id_fields_2,
+                        [#(#id_fields_3),*],
                     )
-                    .drain(),
-            )
-            .add_punct(";")
-            .drain()
-            .collect();
-
-        if provider.debug {
-            println!("{}", prov_tokens);
+                );
         }
-
-        return prov_tokens;
     }
 }

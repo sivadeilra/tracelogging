@@ -1,9 +1,17 @@
 [workspace]
+resolver = "2"
+
 members = [
     "tracelogging",
     "tracelogging_dynamic",
     "tracelogging_macros",
 ]
+
+[workspace.dependencies]
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"
+uuid = "1.0"
 
 [profile.release]
 lto = true

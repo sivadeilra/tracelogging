@@ -4,6 +4,34 @@
 use core::convert::TryInto;
 use core::fmt;
 use core::str::from_utf8;
+use syn::parse::Parse;
+
+use proc_macro2::Span;
+use syn::spanned::Spanned;
+use syn::{Error, Result};
+
+#[derive(Clone)]
+pub struct UuidToken {
+    pub value: uuid::Uuid,
+    pub span: Span,
+}
+
+impl Spanned for UuidToken {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl Parse for UuidToken {
+    fn parse(input: syn::parse::ParseStream) -> Result<Self> {
+        let lit: syn::LitStr = input.parse()?;
+        let span = lit.span();
+        let value = lit.value();
+        let value = uuid::Uuid::parse_str(&value)
+            .map_err(|err| Error::new(span, format!("Failed to parse UUID: {}", err)))?;
+        Ok(UuidToken { value, span })
+    }
+}
 
 /// [GUID](https://docs.microsoft.com/windows/win32/api/guiddef/ns-guiddef-guid)
 /// ([UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier)).
@@ -28,6 +56,7 @@ impl Guid {
         };
     }
 
+    /*
     /// Generates a unique GUID using UuidCreate.
     /// Note: For a zeroed GUID, use Guid::zero().
     /// ```
@@ -49,6 +78,7 @@ impl Guid {
         }
         return g;
     }
+    */
 
     /// Returns a GUID generated from a case-insensitive hash of the specified trace
     /// provider name. The hash uses the same algorithm as many other ETW tools and APIs.

@@ -1,9 +1,88 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#![allow(non_snake_case)]
+
+use proc_macro2::TokenStream;
+use quote::quote;
+
 use crate::enums::{InType as I, OutType as O};
 use crate::field_option::{FieldOption as Opt, FieldStrategy::*};
-use crate::strings::*;
+
+#[allow(dead_code)]
+pub fn check_field_options() {
+    #[cfg(debug_assertions)]
+    for i in 1..FIELD_OPTIONS.len() {
+        debug_assert!(
+            FIELD_OPTIONS[i - 1]
+                .option_name
+                .lt(FIELD_OPTIONS[i].option_name),
+            "{} <=> {}",
+            FIELD_OPTIONS[i - 1].option_name,
+            FIELD_OPTIONS[i].option_name
+        );
+    }
+}
+
+fn U8_PATH() -> TokenStream {
+    quote!(u8)
+}
+
+fn I32_PATH() -> TokenStream {
+    quote!(i32)
+}
+
+fn BOOL_PATH() -> TokenStream {
+    quote!(bool)
+}
+
+fn F32_PATH() -> TokenStream {
+    quote!(f32)
+}
+
+fn GUID_PATH() -> TokenStream {
+    quote!(::tracelogging::Guid)
+}
+
+fn I16_PATH() -> TokenStream {
+    quote!(i16)
+}
+
+fn I64_PATH() -> TokenStream {
+    quote!(i64)
+}
+
+fn I8_PATH() -> TokenStream {
+    quote!(i8)
+}
+
+fn ISIZE_PATH() -> TokenStream {
+    quote!(isize)
+}
+
+fn U16_PATH() -> TokenStream {
+    quote!(u16)
+}
+
+fn U32_PATH() -> TokenStream {
+    quote!(u32)
+}
+
+fn U64_PATH() -> TokenStream {
+    quote!(u64)
+}
+
+fn USIZE_PATH() -> TokenStream {
+    quote!(usize)
+}
+
+fn F64_PATH() -> TokenStream {
+    quote!(f64)
+}
+
+fn EMPTY_SLICE() -> TokenStream {
+    quote!(&[])
+}
 
 /// List must be strcmp-sorted by option_name (for binary search).
 /// (Verified by debug_assert in EventInfo::try_from_tokens.)
@@ -71,10 +150,10 @@ pub static FIELD_OPTIONS: &[Opt] = &[
     Opt::new("raw_data",                U8_PATH,    I::Invalid,    O::Default,       RawData,        0),
     Opt::new("raw_field",               U8_PATH,    I::Invalid,    O::Default,       RawField,       0),
     Opt::new("raw_field_slice",         U8_PATH,    I::Invalid,    O::Default,       RawFieldSlice,  0),
-    Opt::new("raw_meta",                &[],        I::Invalid,    O::Default,       RawMeta,        0),
-    Opt::new("raw_meta_slice",          &[],        I::Invalid,    O::Default,       RawMetaSlice,   0),
-    Opt::new("raw_struct",              &[],        I::Struct,     O::Default,       RawStruct,      0),
-    Opt::new("raw_struct_slice",        &[],        I::Struct,     O::Default,       RawStructSlice, 0),
+    Opt::new("raw_meta",                EMPTY_SLICE,I::Invalid,    O::Default,       RawMeta,        0),
+    Opt::new("raw_meta_slice",          EMPTY_SLICE,I::Invalid,    O::Default,       RawMetaSlice,   0),
+    Opt::new("raw_struct",              EMPTY_SLICE,I::Struct,     O::Default,       RawStruct,      0),
+    Opt::new("raw_struct_slice",        EMPTY_SLICE,I::Struct,     O::Default,       RawStructSlice, 0),
     Opt::new("socketaddress",           U8_PATH,    I::Binary,     O::SocketAddress, Counted,        0),
     Opt::new("socketaddressc",          U8_PATH,    I::BinaryC,    O::SocketAddress, Counted,    0),
     Opt::new("str16",                   U16_PATH,   I::Str16,      O::Default,       Counted,    0),
@@ -84,7 +163,7 @@ pub static FIELD_OPTIONS: &[Opt] = &[
     Opt::new("str8_cp1252",             U8_PATH,    I::Str8,       O::Default,       Counted,    0),
     Opt::new("str8_json",               U8_PATH,    I::Str8,       O::Json,          Counted,    0),
     Opt::new("str8_xml",                U8_PATH,    I::Str8,       O::Xml,           Counted,    0),
-    Opt::new("struct",                  &[],        I::Struct,     O::Default,       Struct,     0),
+    Opt::new("struct",                  EMPTY_SLICE,I::Struct,     O::Default,       Struct,     0),
     Opt::new("systemtime",              I64_PATH,   I::FileTime,   O::Default,       SystemTime, 0),
     Opt::new("tid",                     U32_PATH,   I::U32,        O::Tid,           Scalar,     0),
     Opt::new("tid_slice",               U32_PATH,   I::U32,        O::Tid,           Slice,      0),

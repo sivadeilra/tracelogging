@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 
 use crate::enums::{InType, OutType};
+use proc_macro2::TokenStream;
+use syn::Type;
 
 #[derive(Clone, Copy)]
 pub enum FieldStrategy {
@@ -93,7 +95,7 @@ impl FieldStrategy {
 #[derive(Clone, Copy)]
 pub struct FieldOption {
     pub option_name: &'static str,
-    pub value_type: &'static [&'static str],
+    pub value_type_fn: fn() -> TokenStream,
     pub intype: InType,
     pub outtype: OutType,
     pub strategy: FieldStrategy,
@@ -102,25 +104,29 @@ pub struct FieldOption {
     /// Otherwise, value_array_count = 0.
     ///
     /// This is 4 for IPv4, 8 for SystemTime, and 0 for everything else.
-    pub value_array_count: u8,
+    pub value_array_count: usize,
 }
 
 impl FieldOption {
     pub const fn new(
         option_name: &'static str,
-        value_type: &'static [&'static str],
+        value_type_fn: fn() -> TokenStream,
         intype: InType,
         outtype: OutType,
         strategy: FieldStrategy,
-        value_array_count: u8,
+        value_array_count: usize,
     ) -> Self {
         Self {
             option_name,
             strategy,
-            value_type,
+            value_type_fn,
             intype,
             outtype,
             value_array_count,
         }
+    }
+
+    pub fn value_type(&self) -> Type {
+        crate::parser::check_parse((self.value_type_fn)())
     }
 }

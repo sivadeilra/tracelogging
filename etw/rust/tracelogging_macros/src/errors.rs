@@ -1,57 +1,50 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-use proc_macro::*;
+use proc_macro2::*;
+use quote::ToTokens;
+use syn::Error;
 
 pub struct Errors {
-    error_tokens: Vec<TokenTree>,
+    error_tokens: Option<Error>,
 }
 
 impl Errors {
     pub const fn new() -> Self {
-        return Self {
-            error_tokens: Vec::new(),
-        };
+        Self { error_tokens: None }
     }
 
+    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
-        return self.error_tokens.is_empty();
+        self.error_tokens.is_none()
     }
 
-    pub fn into_items(mut self) -> TokenStream {
-        return self.error_tokens.drain(..).collect();
+    pub fn check(self) -> syn::Result<()> {
+        if let Some(e) = self.error_tokens {
+            Err(e)
+        } else {
+            Ok(())
+        }
     }
 
-    pub fn into_expression(mut self) -> TokenStream {
-        self.error_tokens.push(Literal::u32_unsuffixed(0).into());
-        return TokenTree::from(Group::new(
-            Delimiter::Brace,
-            self.error_tokens.drain(..).collect(),
-        ))
-        .into();
+    #[allow(dead_code)]
+    pub fn into_items(self) -> TokenStream {
+        if let Some(e) = self.error_tokens {
+            e.to_compile_error().into_token_stream()
+        } else {
+            TokenStream::new()
+        }
     }
 
     pub fn add(&mut self, pos: Span, error_message: &str) {
-        self.add_token(pos, Punct::new(':', Spacing::Joint));
-        self.add_token(pos, Punct::new(':', Spacing::Alone));
-        self.add_token(pos, Ident::new("core", pos));
-        self.add_token(pos, Punct::new(':', Spacing::Joint));
-        self.add_token(pos, Punct::new(':', Spacing::Alone));
-        self.add_token(pos, Ident::new("compile_error", pos));
-        self.add_token(pos, Punct::new('!', Spacing::Alone));
-        self.add_token(
-            pos,
-            Group::new(
-                Delimiter::Parenthesis,
-                TokenStream::from_iter([TokenTree::Literal(Literal::string(error_message))]),
-            ),
-        );
-        self.add_token(pos, Punct::new(';', Spacing::Alone));
+        self.push(Error::new(pos, error_message));
     }
 
-    fn add_token(&mut self, pos: Span, token: impl Into<TokenTree>) {
-        let mut tree = token.into();
-        tree.set_span(pos);
-        self.error_tokens.push(tree);
+    pub fn push(&mut self, e: Error) {
+        if let Some(ref mut existing) = self.error_tokens {
+            existing.combine(e);
+        } else {
+            self.error_tokens = Some(e);
+        }
     }
 }
